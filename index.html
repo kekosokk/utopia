@@ -71,7 +71,7 @@
     <div class="settings-section">
       <div class="settings-section-title">Dimensões & Posição</div>
       <div class="setting-row">
-        <span>Tamanho da Nota</span>
+        <span>Tam. da Nota</span>
         <div style="display:flex; align-items:center; gap:10px;">
           <input type="range" id="note-size" min="10" max="150" value="50" oninput="updateSetting('noteSize', this.value, 'px')">
           <span class="range-val" id="noteSize-val">50px</span>
@@ -92,7 +92,7 @@
         </div>
       </div>
       <div class="setting-row" style="margin-top: 10px;">
-        <button class="btn btn-primary" onclick="startPreview()" style="width: 100%;">Testar Gameplay (Preview Visual)</button>
+        <button class="btn btn-primary" onclick="startPreview()" style="width: 100%;">Preview</button>
       </div>
     </div>
 
@@ -114,7 +114,7 @@
       </div>
     </div>
   </div>
-  <button class="btn" style="width:250px; margin-top:30px" onclick="closeSettings()">Guardar & Voltar</button>
+  <button class="btn" style="width:250px; margin-top:30px" onclick="closeSettings()">Voltar</button>
 </div>
 
 <div id="screen-preview" class="screen">

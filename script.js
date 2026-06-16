@@ -5,11 +5,12 @@
 const settings = {
   keys: ['d', 'f', 'j', 'k'],
   colGap: 4, laneOffset: 50, noteSpeed: 5, noteSize: 50, hitLinePos: 88, audioOffset: 0,
-  noteStyle: 'circle', colors: ['#7c5cfc', '#fc5c7d', '#5cfc9a', '#fcb75c']
+  noteStyle: 'circle', colors: ['#5c7cff', '#7b5cff', '#38bdf8', '#a78bff']
 };
 
 let songHistory = [];
 let currentAudioFile = null; 
+let currentAudioBuffer = null; // Buffer de áudio descodificado
 let currentChartData = [];
 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -26,11 +27,12 @@ function playMissSound() {
 
 // CORES DO TÍTULO ALEATÓRIAS
 setInterval(() => {
-  const rHex = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-  document.documentElement.style.setProperty('--tc1', rHex());
-  document.documentElement.style.setProperty('--tc2', rHex());
-  document.documentElement.style.setProperty('--tc3', rHex());
-  document.documentElement.style.setProperty('--tc4', rHex());
+  // Mantém os tons dentro do espectro azul -> roxo (210º a 270º)
+  const rHsl = () => `hsl(${210 + Math.random()*60}, ${70 + Math.random()*25}%, ${60 + Math.random()*12}%)`;
+  document.documentElement.style.setProperty('--tc1', rHsl());
+  document.documentElement.style.setProperty('--tc2', rHsl());
+  document.documentElement.style.setProperty('--tc3', rHsl());
+  document.documentElement.style.setProperty('--tc4', rHsl());
 }, 800);
 
 function loadSettings() {
@@ -196,7 +198,7 @@ window.addEventListener('resize', initParticles); initParticles(); animParticles
 const fileInput = document.getElementById('file-input');
 if(fileInput) { fileInput.addEventListener('click', function() { this.value = null; }); fileInput.addEventListener('change', e => { if (e.target.files[0]) processAudioFile(e.target.files[0]); }); }
 
-function setStatus(msg, isErr=false) { const el = document.getElementById('load-status'); if(el) { el.textContent = msg; el.style.color = isErr ? '#fc5c7d' : '#5cfc9a'; } }
+function setStatus(msg, isErr=false) { const el = document.getElementById('load-status'); if(el) { el.textContent = msg; el.style.color = isErr ? '#a78bff' : '#38bdf8'; } }
 function setProgress(pct) { const bar = document.getElementById('progress-bar'), fill = document.getElementById('progress-fill'); if(bar && fill) { bar.style.display = 'block'; fill.style.width = pct + '%'; if (pct >= 100) setTimeout(() => { bar.style.display = 'none'; }, 600); } }
 
 async function processAudioFile(file) {
@@ -205,6 +207,7 @@ async function processAudioFile(file) {
   try {
     if(audioCtx.state === 'closed') audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const arrayBuffer = await file.arrayBuffer(); const buffer = await audioCtx.decodeAudioData(arrayBuffer);
+    currentAudioBuffer = buffer;  // Guarda o buffer para a gameplay
     setStatus('Gerando Chart...'); setProgress(50);
     currentChartData = await generateChartSpectralFlux(buffer, p => setProgress(50 + p * 50));
     setProgress(100); setStatus('Concluído!');
@@ -317,19 +320,32 @@ function startGame() {
   showScreen('game');
   for (let i=0; i<4; i++) document.getElementById('lane-'+i).querySelectorAll('.note,.hit-feedback').forEach(e=>e.remove());
 
-  const url = URL.createObjectURL(currentAudioFile);
-  const audioEl = new Audio(url); audioEl.crossOrigin = 'anonymous';
+  if (!currentAudioBuffer) return;   // segurança
+
+  // Guarda o instante em que o áudio deve começar (2 segundos de espera)
+  const startDelay = 2; // segundos
+  const audioStartTime = audioCtx.currentTime + startDelay;
+
+  // Cria o source e agenda
+  const source = audioCtx.createBufferSource();
+  source.buffer = currentAudioBuffer;
+  source.connect(audioCtx.destination);
+  source.start(audioStartTime);
 
   game = {
     chart: JSON.parse(JSON.stringify(currentChartData)).map(n => ({...n, hit: false, missed: false, el: null})),
-    audio: audioEl, 
-    start: performance.now()/1000 + 2, // Espera de 2 segundos restaurada para a música não começar logo no frame zero
+    source: source,                // guardamos o nó para pausa
+    startAudioTime: audioStartTime,// referência temporal da música
     score: 0, combo: 0, maxCombo: 0, hp: 100,
-    p: 0, g: 0, m: 0, paused: false, pTime: 0, run: true, audioStarted: false
+    p: 0, g: 0, m: 0, paused: false, run: true
   };
 
   updHUD();
-  audioEl.addEventListener('ended', () => { if(game && game.run) endGame(); });
+  // O evento 'ended' agora é do source
+  source.onended = () => {
+    if(game && game.run && audioCtx.currentTime >= game.startAudioTime + currentAudioBuffer.duration - 0.1)
+      endGame();
+  };
   loop();
 }
 
@@ -337,13 +353,13 @@ function loop() {
   if (!game || !game.run) return;
   if (game.paused || prevRun) { animFrame = requestAnimationFrame(loop); return; }
 
-  const now = performance.now()/1000;
-  const time = now - game.start + (settings.audioOffset/1000);
-  
+  // O tempo é calculado a partir do relógio de áudio, sincronizado perfeitamente
+  let time = audioCtx.currentTime - game.startAudioTime;
+  // Ajuste manual opcional (settings.audioOffset)
+  time += settings.audioOffset / 1000;
+
   const speed = settings.noteSpeed, hlPct = settings.hitLinePos / 100;
   const spawnT = speed * hlPct + 0.15;
-
-  if(!game.audioStarted && (now - game.start) >= 0) { game.audio.play(); game.audioStarted = true; }
 
   for (const n of game.chart) {
     if (n.hit || n.missed || n.el) continue;
@@ -395,8 +411,9 @@ document.addEventListener('keyup', e => {
 
 function hit(col) {
   if(!game) return; 
-  // Sem latência artificial no cálculo! Lê exatamente o instante do clique do PC.
-  const time = performance.now()/1000 - game.start + (settings.audioOffset/1000);
+  // Agora utiliza o audioCtx.currentTime para total sincronia
+  let time = audioCtx.currentTime - game.startAudioTime;
+  time += settings.audioOffset / 1000;
   
   let target = null;
   for (const n of game.chart) { 
@@ -437,17 +454,52 @@ function updHUD() {
   document.getElementById('hp-fill').style.background = game.hp > 50 ? settings.colors[2] : (game.hp > 20 ? settings.colors[3] : settings.colors[1]);
 }
 
-function pauseGame() { if(!game||!game.run)return; game.paused=true; game.pTime=performance.now(); game.audio.pause(); document.getElementById('pause-overlay').classList.add('visible'); }
-function resumeGame() { if(!game)return; game.start += (performance.now()-game.pTime)/1000; game.paused=false; game.audio.play(); document.getElementById('pause-overlay').classList.remove('visible'); }
-function quitGame() { document.getElementById('pause-overlay').classList.remove('visible'); endGame(); }
+function pauseGame() {
+  if(!game||!game.run)return;
+  game.paused = true;
+  game.pauseOffset = audioCtx.currentTime - game.startAudioTime;  // tempo já tocado
+  try { game.source.stop(); } catch(e) {}
+  document.getElementById('pause-overlay').classList.add('visible');
+}
+
+function resumeGame() {
+  if(!game)return;
+  // Cria novo source a partir do offset
+  const source = audioCtx.createBufferSource();
+  source.buffer = currentAudioBuffer;
+  source.connect(audioCtx.destination);
+  // Recalcula o novo startAudioTime para que o áudio prossiga do ponto onde parou
+  game.startAudioTime = audioCtx.currentTime - game.pauseOffset;
+  source.start(0, game.pauseOffset);   // inicia logo, mas a partir do offset
+  game.source = source;
+  game.paused = false;
+  source.onended = () => {
+    if(game && game.run && audioCtx.currentTime >= game.startAudioTime + currentAudioBuffer.duration - 0.1)
+      endGame();
+  };
+  document.getElementById('pause-overlay').classList.remove('visible');
+}
+
+function quitGame() {
+  if(game && game.source) {
+    try { game.source.stop(); } catch(e) {}
+  }
+  document.getElementById('pause-overlay').classList.remove('visible');
+  endGame();
+}
 
 function endGame() {
-  if(!game) return; game.run=false; cancelAnimationFrame(animFrame); game.audio.pause();
+  if(!game) return;
+  game.run = false;
+  cancelAnimationFrame(animFrame);
+  try { game.source.stop(); } catch(e) {}
+  
   const tot = game.p+game.g+game.m; const acc = tot===0 ? 100 : Math.round((game.p*100 + game.g*50)/(tot*100)*100); let gr = 'D', cl = '#8b8b9e';
   if(game.hp<=0) { gr='F'; cl=settings.colors[1]; } else if(acc>=95 && game.m===0) { gr='S'; cl='#ffd700'; } else if(acc>=90) { gr='A'; cl=settings.colors[2]; } else if(acc>=80) { gr='B'; cl=settings.colors[0]; } else if(acc>=60) { gr='C'; cl=settings.colors[3]; }
   document.getElementById('results-grade').textContent = gr; document.getElementById('results-grade').style.color = cl;
   document.getElementById('r-score').textContent = String(game.score).padStart(6,'0'); document.getElementById('r-acc').textContent = acc+'%'; document.getElementById('r-combo').textContent = game.maxCombo;
-  game = null; showScreen('results');
+  game = null;
+  showScreen('results');
 }
 
 loadSettings();
