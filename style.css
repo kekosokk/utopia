@@ -1,0 +1,207 @@
+:root {
+  /* Cores Base do Sistema UTOPIA */
+  --bg: #07070a;
+  --surface: #121216;
+  --surface-hover: #1c1c22;
+  --border: #2a2a35;
+  --text: #f0f0f5;
+  --text-dim: #707085;
+  --brand: #ffffff;
+  
+  /* Variáveis Dinâmicas (Controladas pelo JS) */
+  --col1: #7c5cfc; --col2: #fc5c7d; --col3: #5cfc9a; --col4: #fcb75c;
+  --hit-line: 88%;
+  --col-width: 80px;
+  --note-size: 30px;
+  --col-gap: 4px;
+  --lane-offset: 50%;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+#particles, #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+#vignette { background: radial-gradient(circle at center, transparent 30%, #000 120%); }
+
+.screen { display: none; width: 100%; height: 100vh; position: absolute; z-index: 1; flex-direction: column; align-items: center; justify-content: center; }
+.screen.active { display: flex; }
+
+/* BOTOES E UI (Robusto/Sólido) */
+.btn {
+  padding: 16px 24px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.2s ease;
+  width: 100%;
+}
+.btn:hover { background: var(--surface-hover); border-color: #555; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+.btn-primary { background: #fff; color: #000; border: none; }
+.btn-primary:hover { background: #e0e0e0; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+
+.logo-title {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(255,255,255,0.3);
+}
+.logo-sub { font-size: 1rem; font-weight: 700; letter-spacing: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 40px; }
+
+/* LOAD & HISTORY */
+.load-zone {
+  width: min(500px, 90vw); height: 160px;
+  background: var(--surface); border: 2px dashed var(--border); border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: 0.2s;
+}
+.load-zone:hover { border-color: var(--text); background: var(--surface-hover); }
+.load-zone input[type=file] { display: none; }
+.load-icon { font-size: 2.5rem; }
+.load-text { font-weight: 700; font-size: 1.1rem; }
+.load-hint { color: var(--text-dim); font-size: 0.85rem; }
+
+.history-container { width: min(500px, 90vw); margin-top: 20px; background: var(--surface); border-radius: 8px; padding: 16px; border: 1px solid var(--border); }
+.history-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+.history-list { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto; }
+.history-item { padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; cursor: pointer; font-size: 0.9rem; border: 1px solid transparent; transition: 0.2s; display: flex; justify-content: space-between;}
+.history-item:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+.history-note { font-size: 0.7rem; color: #555; margin-top: 12px; text-align: center; }
+
+/* SETTINGS */
+#screen-settings { padding: 40px 20px; justify-content: flex-start; overflow-y: auto; }
+.settings-grid { width: min(520px, 95vw); display: flex; flex-direction: column; gap: 16px; }
+.settings-section { background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); }
+.settings-section-title { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.setting-row:last-child { margin-bottom: 0; }
+.range-group { display: flex; align-items: center; gap: 12px; }
+input[type=range] { accent-color: #fff; width: 120px; }
+.range-val { font-size: 0.85rem; color: var(--text-dim); width: 45px; text-align: right; font-variant-numeric: tabular-nums; }
+.custom-select { background: #000; color: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 0.9rem; }
+
+.color-picker-group { display: flex; gap: 8px; }
+input[type=color] { border: none; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; background: transparent; }
+input[type=color]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; }
+
+.key-btn { background: #000; color: #fff; border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 60px; text-align: center; }
+.key-btn.listening { background: #fff; color: #000; }
+
+/* PROGRESS */
+.progress-bar { width: min(500px, 90vw); height: 6px; background: var(--border); border-radius: 3px; margin: 16px 0; overflow: hidden; display: none;}
+.progress-fill { height: 100%; background: #fff; width: 0%; transition: 0.2s; }
+.load-status { font-weight: 700; font-size: 0.9rem; min-height: 20px; color: var(--text-dim); }
+
+/* ==== MECÂNICA E PISTA DE NOTAS ==== */
+#screen-game { background: #000; }
+
+/* Este é o segredo para o offset funcionar perfeito mesmo se o width for gigante */
+#lane-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--lane-offset); /* Valor de 10% a 90% */
+  transform: translateX(-50%); /* Centraliza exato no ponto escolhido */
+  display: flex;
+  gap: var(--col-gap);
+  border-left: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+}
+
+/* OVERFLOW VISIBLE PREVINE CORTE NAS BORDAS DAS NOTAS */
+.lane {
+  width: var(--col-width);
+  height: 100%;
+  position: relative;
+  overflow: visible; /* RESOLVE O BUG DO CÍRCULO CORTADO */
+  border-right: 1px solid rgba(255,255,255,0.02);
+}
+.lane:last-child { border-right: none; }
+.lane.pressed::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(255,255,255,0.1), transparent 30%); pointer-events: none; }
+
+.hit-line {
+  position: absolute; left: -20px; right: -20px; top: var(--hit-line);
+  height: 2px; background: rgba(255,255,255,0.3); z-index: 5;
+}
+
+/* RECEPTOR & NOTAS */
+.receptor, .note { position: absolute; pointer-events: none; }
+.receptor { z-index: 9; top: var(--hit-line); transition: 0.1s; }
+.note { z-index: 10; will-change: top; }
+.note.miss { opacity: 0.2; filter: grayscale(1); }
+
+/* LÓGICA DE ESTILOS (BARRA VS CÍRCULO) */
+/* Quando é Barra, usa a largura total da coluna (col-width) e altura do note-size */
+#lane-container.style-bar .receptor,
+#lane-container.style-bar .note {
+  width: var(--col-width);
+  height: var(--note-size);
+  left: 0;
+  border-radius: 4px;
+  transform: translateY(-50%); /* Centraliza na hit-line pelo meio da nota */
+}
+#lane-container.style-bar .receptor { border: 2px solid; opacity: 0.4; }
+
+/* Quando é Círculo, ignora a largura da coluna. O tamanho exato é note-size x note-size */
+#lane-container.style-circle .receptor,
+#lane-container.style-circle .note {
+  width: var(--note-size);
+  height: var(--note-size);
+  border-radius: 50%;
+  /* Centraliza a nota/receptor perfeitamente no meio da coluna, seja qual for a largura da coluna */
+  left: calc((var(--col-width) - var(--note-size)) / 2);
+  transform: translateY(-50%);
+}
+#lane-container.style-circle .receptor { border: 3px solid; opacity: 0.4; }
+
+/* CORES INDIVIDUAIS */
+.lane:nth-child(1) .receptor { border-color: var(--col1); }
+.lane:nth-child(2) .receptor { border-color: var(--col2); }
+.lane:nth-child(3) .receptor { border-color: var(--col3); }
+.lane:nth-child(4) .receptor { border-color: var(--col4); }
+.receptor.active { opacity: 1; box-shadow: 0 0 20px currentColor, inset 0 0 10px currentColor; background: rgba(255,255,255,0.1); }
+
+.lane:nth-child(1) .note { background: var(--col1); box-shadow: 0 0 15px var(--col1); }
+.lane:nth-child(2) .note { background: var(--col2); box-shadow: 0 0 15px var(--col2); }
+.lane:nth-child(3) .note { background: var(--col3); box-shadow: 0 0 15px var(--col3); }
+.lane:nth-child(4) .note { background: var(--col4); box-shadow: 0 0 15px var(--col4); }
+
+/* HUD/GAMEPLAY UI */
+.hud-hp-container { position: absolute; top: 30px; left: 30px; width: 250px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.hud-hp-fill { height: 100%; transition: width 0.15s ease-out, background 0.3s; }
+.hud-score-container { position: absolute; top: 30px; right: 40px; text-align: right; }
+.hud-score-val { font-size: 2.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.hud-combo-val { font-size: 1.5rem; font-weight: 700; color: var(--text-dim); }
+.hud-judgement-container { position: absolute; bottom: 40px; left: 40px; }
+.hud-judgement-row { display: flex; gap: 16px; margin-bottom: 4px; font-weight: 700; font-size: 0.9rem;}
+.judgement-label { color: var(--text-dim); width: 80px; text-transform: uppercase; }
+
+.hit-feedback { position: absolute; top: calc(var(--hit-line) - 80px); left: 50%; transform: translateX(-50%); font-weight: 900; font-size: 1rem; letter-spacing: 2px; z-index: 20; animation: rise 0.4s forwards; }
+@keyframes rise { 0%{opacity:1;transform:translateX(-50%) translateY(0) scale(0.8)} 100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.1)} }
+
+/* RESULTADOS E PAUSA */
+#pause-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+#pause-overlay.visible { display: flex; }
+.pause-title { font-size: 3rem; font-weight: 900; letter-spacing: 4px; }
+.results-grade { font-size: 8rem; font-weight: 900; margin: 20px 0; }
+.results-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: min(600px, 95vw); margin-bottom: 32px;}
+.stat-box { background: var(--surface); padding: 20px; border-radius: 8px; text-align: center; }
+.stat-val { font-size: 1.8rem; font-weight: 900; }
+.stat-lbl { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; font-weight: 700;}
