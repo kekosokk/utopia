@@ -4,181 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Utopia</title>
-<style>
-  :root {
-    --bg: #050508;
-    --surface: rgba(18, 18, 26, 0.7);
-    --surface2: rgba(26, 26, 38, 0.8);
-    --border: rgba(255, 255, 255, 0.1);
-    --text: #ffffff;
-    --text-dim: #8b8b9e;
-    
-    /* Variáveis Dinâmicas de Jogo */
-    --hit-line: 88%;
-    --col1: #7c5cfc; --col2: #fc5c7d; --col3: #5cfc9a; --col4: #fcb75c;
-    
-    /* Geometria Dinâmica */
-    --col-width: 80px;
-    --note-size: 30px;
-    --col-gap: 4px;
-    --lane-offset: 50%;
-  }
-  
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-  }
-
-  body::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at center, transparent 30%, #000000 100%);
-    pointer-events: none; z-index: 0;
-  }
-
-  .screen { display: none; width: 100%; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-  /* Botoes e UI */
-  .btn {
-    padding: 16px 32px; border: 1px solid var(--border); background: var(--surface);
-    backdrop-filter: blur(8px); color: var(--text); font-size: 1rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase; cursor: pointer; border-radius: 8px;
-    transition: all 0.2s; position: relative;
-  }
-  .btn:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); background: var(--surface2); }
-  .btn-primary { background: rgba(255,255,255,0.05); }
-
-  /* Menu Principal */
-  .logo-title {
-    font-size: clamp(4rem, 10vw, 8rem); font-weight: 900; letter-spacing: -2px;
-    background: linear-gradient(135deg, var(--col1), var(--col2), var(--col3), var(--col4));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    text-shadow: 0px 10px 30px rgba(0,0,0,0.8); margin-bottom: 8px;
-  }
-  .logo-sub { font-size: 1rem; letter-spacing: 8px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 40px; text-align: center; }
-  .menu-btns { display: flex; flex-direction: column; gap: 16px; width: 280px; z-index: 2; }
-
-  /* Load e Histórico */
-  .load-zone {
-    width: min(480px, 90vw); height: 180px; background: var(--surface); border: 2px dashed var(--border);
-    border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-    cursor: pointer; transition: all 0.2s; backdrop-filter: blur(10px); margin-bottom: 20px;
-  }
-  .load-zone:hover { border-color: var(--text-dim); background: var(--surface2); }
-  .load-zone input[type=file] { display: none; }
-  
-  .history-container { width: min(480px, 90vw); display: flex; flex-direction: column; gap: 8px; }
-  .history-title { font-size: 0.8rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-  .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto; }
-  .history-item { background: var(--surface); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: 0.15s; }
-  .history-item:hover { background: var(--surface2); border: 1px solid var(--border); }
-
-  .progress-bar { width: min(480px, 90vw); height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; display: none; margin-bottom: 10px; }
-  .progress-fill { height: 100%; background: #fff; width: 0%; transition: width 0.1s; }
-  .load-status { font-weight: bold; color: var(--accent3); min-height: 24px; }
-
-  /* Configurações */
-  #screen-settings { gap: 32px; overflow-y: auto; padding: 40px 20px; justify-content: flex-start; }
-  .settings-title { font-size: 2rem; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
-  .settings-grid { display: flex; flex-direction: column; gap: 24px; width: min(520px, 92vw); }
-  .settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
-  .settings-section-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  
-  input[type=range] { accent-color: #fff; width: 140px; cursor: pointer; }
-  .range-val { font-size: 0.85rem; color: var(--text-dim); min-width: 45px; text-align: right; }
-  input[type=color] { border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; background: none; }
-  input[type=color]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; }
-  select { background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border); padding: 8px; border-radius: 4px; }
-  .key-btn { padding: 8px 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: #fff; border-radius: 4px; cursor: pointer; min-width: 60px; font-weight: bold; }
-
-  /* Gameplay Pista */
-  #screen-game { background: #000; }
-  
-  #lane-container {
-    position: absolute;
-    top: 0; bottom: 0;
-    left: var(--lane-offset); /* Centraliza usando o offset configurado */
-    transform: translateX(-50%);
-    display: flex;
-    gap: var(--col-gap);
-    background: rgba(255,255,255,0.02);
-    border-left: 1px solid rgba(255,255,255,0.05);
-    border-right: 1px solid rgba(255,255,255,0.05);
-  }
-
-  .lane {
-    width: var(--col-width);
-    height: 100%;
-    position: relative;
-    overflow: visible; /* IMPEDE QUE AS NOTAS SEJAM CORTADAS */
-    border-right: 1px solid rgba(255,255,255,0.02);
-  }
-  .lane:last-child { border-right: none; }
-  .hit-line { position: absolute; left: -20px; right: -20px; top: var(--hit-line); height: 2px; background: rgba(255,255,255,0.5); z-index: 10; }
-
-  /* Estilos de Notas */
-  .receptor, .note { position: absolute; pointer-events: none; }
-  .receptor { z-index: 9; opacity: 0.5; top: var(--hit-line); }
-  .note { z-index: 10; will-change: top; }
-
-  /* BARRA */
-  #lane-container.style-bar .receptor, #lane-container.style-bar .note {
-    width: var(--col-width); height: var(--note-size); left: 0; border-radius: 4px; transform: translateY(-50%);
-  }
-  #lane-container.style-bar .receptor { border: 2px solid; }
-
-  /* CIRCULO */
-  #lane-container.style-circle .receptor, #lane-container.style-circle .note {
-    width: var(--note-size); height: var(--note-size); border-radius: 50%;
-    left: calc((var(--col-width) - var(--note-size)) / 2); /* Mantém centrado mesmo se a nota for maior que a coluna */
-    transform: translateY(-50%);
-  }
-  #lane-container.style-circle .receptor { border: 3px solid; }
-
-  /* Cores das Notas */
-  .lane:nth-child(1) .receptor { border-color: var(--col1); } .lane:nth-child(1) .note { background: var(--col1); box-shadow: 0 0 15px var(--col1); }
-  .lane:nth-child(2) .receptor { border-color: var(--col2); } .lane:nth-child(2) .note { background: var(--col2); box-shadow: 0 0 15px var(--col2); }
-  .lane:nth-child(3) .receptor { border-color: var(--col3); } .lane:nth-child(3) .note { background: var(--col3); box-shadow: 0 0 15px var(--col3); }
-  .lane:nth-child(4) .receptor { border-color: var(--col4); } .lane:nth-child(4) .note { background: var(--col4); box-shadow: 0 0 15px var(--col4); }
-  .receptor.active { opacity: 1; box-shadow: 0 0 20px currentColor, inset 0 0 10px currentColor; }
-  .note.miss { opacity: 0.2; filter: grayscale(1); }
-
-  /* HUD */
-  .hud-hp-container { position: absolute; top: 30px; left: 30px; width: 250px; height: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
-  .hud-hp-fill { height: 100%; transition: 0.2s; background: #fff; }
-  .hud-score-container { position: absolute; top: 30px; right: 40px; text-align: right; }
-  .hud-score-val { font-size: 2.5rem; font-weight: 900; }
-  .hud-combo-val { font-size: 1.5rem; color: var(--text-dim); margin-top: 5px; }
-  .hit-feedback { position: absolute; top: calc(var(--hit-line) - 80px); left: 50%; transform: translateX(-50%); font-weight: 900; font-size: 1rem; z-index: 20; animation: rise 0.4s forwards; }
-  @keyframes rise { 0%{opacity:1;transform:translateX(-50%) translateY(0) scale(0.8)} 100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.1)} }
-
-  /* Resultados e Pausa */
-  #pause-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 24px; backdrop-filter: blur(8px); }
-  #pause-overlay.visible { display: flex; }
-  .pause-title { font-size: 3rem; font-weight: 900; }
-  .results-grade { font-size: 6rem; font-weight: 900; }
-  .results-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: min(500px, 90vw); margin-bottom: 20px; }
-  .stat-box { background: var(--surface); padding: 16px; border-radius: 8px; text-align: center; }
-  .stat-val { font-size: 1.5rem; font-weight: 900; }
-  
-  /* CountDown */
-  #screen-countdown { background: var(--bg); }
-  .countdown-num { font-size: 10rem; font-weight: 900; animation: countdown-pop 1s ease-out; }
-  @keyframes countdown-pop { 0%{transform:scale(1.4);opacity:0} 30%{transform:scale(1);opacity:1} 80%{opacity:1} 100%{opacity:0;transform:scale(0.7)} }
-
-  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -186,7 +12,7 @@
 
 <div id="screen-menu" class="screen active">
   <div class="logo">
-    <div class="logo-title">UTOPIA</div>
+    <div class="logo-title" id="main-logo">UTOPIA</div>
     <div class="logo-sub">Rhythm Engine</div>
   </div>
   <div class="menu-btns">
@@ -202,26 +28,22 @@
     <div style="font-size:1.1rem; font-weight:bold;">Selecionar Música Local</div>
     <div style="font-size:0.8rem; color:var(--text-dim);">MP3, OGG, WAV</div>
   </div>
-  
   <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
   <div class="load-status" id="load-status"></div>
-
   <div class="history-container">
-    <div class="history-title">Últimas Músicas (Clique para selecionar o ficheiro)</div>
+    <div class="history-title">Últimas Músicas</div>
     <div class="history-list" id="history-list"></div>
   </div>
-
   <button class="btn" style="width:200px; margin-top:20px;" onclick="showScreen('menu')">Voltar</button>
 </div>
 
 <div id="screen-settings" class="screen">
   <div class="settings-title">Configurações</div>
   <div class="settings-grid">
-
     <div class="settings-section">
       <div class="settings-section-title">Estilo Visual</div>
       <div class="setting-row">
-        <span>Formato da Nota</span>
+        <span>Formato</span>
         <select id="note-style" onchange="updateNoteStyle(this.value)">
           <option value="bar">Barras Clássicas</option>
           <option value="circle">Círculos</option>
@@ -247,47 +69,65 @@
     </div>
 
     <div class="settings-section">
-      <div class="settings-section-title">Dimensões & Posição (Valores Extremos)</div>
-      <div class="setting-row">
-        <span>Largura da Coluna</span>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <input type="range" id="col-width" min="10" max="500" value="80" oninput="updateColWidth(this.value)">
-          <span class="range-val" id="col-width-val">80px</span>
-        </div>
-      </div>
+      <div class="settings-section-title">Dimensões & Posição</div>
       <div class="setting-row">
         <span>Tamanho da Nota</span>
         <div style="display:flex; align-items:center; gap:10px;">
-          <input type="range" id="note-size" min="10" max="500" value="30" oninput="updateNoteSize(this.value)">
-          <span class="range-val" id="note-size-val">30px</span>
+          <input type="range" id="note-size" min="10" max="150" value="50" oninput="updateSetting('noteSize', this.value, 'px')">
+          <span class="range-val" id="noteSize-val">50px</span>
         </div>
       </div>
       <div class="setting-row">
-        <span>Espaçamento (Gap)</span>
+        <span>Espaçamento</span>
         <div style="display:flex; align-items:center; gap:10px;">
-          <input type="range" id="col-gap" min="0" max="300" value="4" oninput="updateColGap(this.value)">
-          <span class="range-val" id="col-gap-val">4px</span>
+          <input type="range" id="col-gap" min="0" max="300" value="4" oninput="updateSetting('colGap', this.value, 'px')">
+          <span class="range-val" id="colGap-val">4px</span>
         </div>
       </div>
       <div class="setting-row">
-        <span>Posição da Pista (←→)</span>
+        <span>Posição (←→)</span>
         <div style="display:flex; align-items:center; gap:10px;">
-          <input type="range" id="lane-offset" min="0" max="100" value="50" oninput="updateLaneOffset(this.value)">
-          <span class="range-val" id="lane-offset-val">50%</span>
+          <input type="range" id="lane-offset" min="0" max="100" value="50" oninput="updateSetting('laneOffset', this.value, '%')">
+          <span class="range-val" id="laneOffset-val">50%</span>
         </div>
+      </div>
+      <div class="setting-row" style="margin-top: 10px;">
+        <button class="btn btn-primary" onclick="startPreview()" style="width: 100%;">Testar Gameplay (Preview Visual)</button>
       </div>
     </div>
 
     <div class="settings-section">
-      <div class="settings-section-title">Gameplay</div>
+      <div class="settings-section-title">Gameplay e Áudio</div>
       <div class="setting-row">
         <span>Velocidade Queda</span>
-        <div style="display:flex; gap:10px;"><input type="range" id="note-speed" min="0.5" max="15" value="5" step="0.5" oninput="updateNoteSpeed(this.value)"><span class="range-val" id="note-speed-val">5s</span></div>
+        <div style="display:flex; gap:10px;">
+          <input type="range" id="note-speed" min="0.5" max="15" value="5" step="0.5" oninput="updateSetting('noteSpeed', this.value, 's')">
+          <span class="range-val" id="noteSpeed-val">5s</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Offset Áudio (Sincronia)</span>
+        <div style="display:flex; gap:10px;">
+          <input type="range" id="audio-offset" min="-100" max="100" value="0" step="5" oninput="updateSetting('audioOffset', this.value, 'ms')">
+          <span class="range-val" id="audioOffset-val">0ms</span>
+        </div>
       </div>
     </div>
-
   </div>
-  <button class="btn" style="width:250px; margin-top:20px" onclick="saveSettings(); showScreen('menu')">Guardar & Voltar</button>
+  <button class="btn" style="width:250px; margin-top:30px" onclick="closeSettings()">Guardar & Voltar</button>
+</div>
+
+<div id="screen-preview" class="screen">
+  <button class="btn btn-primary" style="position:absolute; top:30px; left:30px; width:200px; z-index:100;" onclick="stopPreview()">Voltar às Opções</button>
+  <div style="position:absolute; top:30px; right:30px; font-size:1.5rem; font-weight:bold; color:var(--text-dim); z-index:100;">PREVIEW MODO</div>
+  
+  <div id="preview-lane-container" class="play-container style-circle">
+    <div class="hit-line"></div>
+    <div class="lane lane-0" id="p-lane-0"><div class="receptor"></div></div>
+    <div class="lane lane-1" id="p-lane-1"><div class="receptor"></div></div>
+    <div class="lane lane-2" id="p-lane-2"><div class="receptor"></div></div>
+    <div class="lane lane-3" id="p-lane-3"><div class="receptor"></div></div>
+  </div>
 </div>
 
 <div id="screen-countdown" class="screen">
@@ -303,12 +143,12 @@
     <div><span style="color:var(--text-dim);font-weight:bold;margin-right:10px;">Erro</span><span id="miss-val" style="font-weight:bold">0</span></div>
   </div>
 
-  <div id="lane-container" class="style-circle">
+  <div id="lane-container" class="play-container style-circle">
     <div class="hit-line"></div>
-    <div class="lane" id="lane-0"><div class="receptor"></div></div>
-    <div class="lane" id="lane-1"><div class="receptor"></div></div>
-    <div class="lane" id="lane-2"><div class="receptor"></div></div>
-    <div class="lane" id="lane-3"><div class="receptor"></div></div>
+    <div class="lane lane-0" id="lane-0"><div class="receptor"></div></div>
+    <div class="lane lane-1" id="lane-1"><div class="receptor"></div></div>
+    <div class="lane lane-2" id="lane-2"><div class="receptor"></div></div>
+    <div class="lane lane-3" id="lane-3"><div class="receptor"></div></div>
   </div>
 
   <div class="hud-score-container">
@@ -320,8 +160,9 @@
 
 <div id="pause-overlay">
   <div class="pause-title">PAUSA</div>
-  <div style="display:flex;gap:16px;">
+  <div class="pause-btns">
     <button class="btn" onclick="resumeGame()">Continuar</button>
+    <button class="btn" onclick="openSettingsFromPause()">Configurações</button>
     <button class="btn btn-primary" onclick="retryGame()">Repetir</button>
     <button class="btn" onclick="quitGame()">Sair</button>
   </div>
@@ -342,379 +183,6 @@
   </div>
 </div>
 
-<script>
-// ==========================================
-// ESTADO E CONFIGURAÇÕES DO JOGO
-// ==========================================
-const settings = {
-  keys: ['d', 'f', 'j', 'k'],
-  colWidth: 80, noteSize: 30, colGap: 4, laneOffset: 50,
-  noteSpeed: 5, hitLinePos: 88, noteStyle: 'circle',
-  colors: ['#7c5cfc', '#fc5c7d', '#5cfc9a', '#fcb75c']
-};
-
-let songHistory = [];
-let currentAudioFile = null;
-let currentChartData = [];
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function loadSettings() {
-  try {
-    const saved = localStorage.getItem('utopia_settings');
-    if (saved) Object.assign(settings, JSON.parse(saved));
-    const hist = localStorage.getItem('utopia_history');
-    if (hist) songHistory = JSON.parse(hist);
-  } catch(e) {}
-  applySettings();
-  renderHistory();
-}
-
-function saveSettings() {
-  localStorage.setItem('utopia_settings', JSON.stringify(settings));
-  applySettings();
-}
-
-function saveToHistory(fileName) {
-  songHistory = songHistory.filter(n => n !== fileName);
-  songHistory.unshift(fileName);
-  if(songHistory.length > 5) songHistory.pop();
-  localStorage.setItem('utopia_history', JSON.stringify(songHistory));
-  renderHistory();
-}
-
-function renderHistory() {
-  const list = document.getElementById('history-list'); list.innerHTML = '';
-  if (songHistory.length === 0) { list.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;">Vazio</div>'; return; }
-  songHistory.forEach(song => {
-    const div = document.createElement('div'); div.className = 'history-item';
-    div.innerHTML = `${song}`;
-    div.onclick = () => document.getElementById('file-input').click();
-    list.appendChild(div);
-  });
-}
-
-// FUNÇÕES DE ATUALIZAÇÃO (LIGADAS DIRETAMENTE AOS SLIDERS)
-function updateColWidth(v) { settings.colWidth = +v; document.documentElement.style.setProperty('--col-width', v+'px'); document.getElementById('col-width-val').textContent = v+'px'; }
-function updateNoteSize(v) { settings.noteSize = +v; document.documentElement.style.setProperty('--note-size', v+'px'); document.getElementById('note-size-val').textContent = v+'px'; }
-function updateColGap(v)   { settings.colGap = +v; document.documentElement.style.setProperty('--col-gap', v+'px'); document.getElementById('col-gap-val').textContent = v+'px'; }
-function updateLaneOffset(v){ settings.laneOffset = +v; document.documentElement.style.setProperty('--lane-offset', v+'%'); document.getElementById('lane-offset-val').textContent = v+'%'; }
-function updateNoteSpeed(v){ settings.noteSpeed = +v; document.getElementById('note-speed-val').textContent = v+'s'; }
-function updateNoteStyle(v){ settings.noteStyle = v; document.getElementById('lane-container').className = 'style-'+v; }
-function updateColor(idx, hex){ settings.colors[idx-1] = hex; document.documentElement.style.setProperty('--col'+idx, hex); }
-
-function applySettings() {
-  updateColWidth(settings.colWidth);
-  updateNoteSize(settings.noteSize);
-  updateColGap(settings.colGap);
-  updateLaneOffset(settings.laneOffset);
-  updateNoteSpeed(settings.noteSpeed);
-  updateNoteStyle(settings.noteStyle);
-  
-  [1,2,3,4].forEach(i => {
-    updateColor(i, settings.colors[i-1]);
-    const picker = document.getElementById('color-c'+i);
-    if(picker) picker.value = settings.colors[i-1];
-  });
-  
-  const selStyle = document.getElementById('note-style');
-  if(selStyle) selStyle.value = settings.noteStyle;
-
-  settings.keys.forEach((key, i) => {
-    const btn = document.getElementById('key-btn-'+i);
-    if(btn) btn.textContent = key.toUpperCase();
-  });
-  
-  ['col-width','note-size','col-gap','lane-offset','note-speed'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) {
-      if(id==='col-width') el.value = settings.colWidth;
-      if(id==='note-size') el.value = settings.noteSize;
-      if(id==='col-gap') el.value = settings.colGap;
-      if(id==='lane-offset') el.value = settings.laneOffset;
-      if(id==='note-speed') el.value = settings.noteSpeed;
-    }
-  });
-}
-
-let listeningIndex = -1;
-function listenKey(i) {
-  listeningIndex = i;
-  const btn = document.getElementById('key-btn-'+i);
-  btn.textContent = '…'; btn.classList.add('listening');
-}
-
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
-  if (name === 'settings') applySettings();
-}
-
-// ==========================================
-// LÓGICA DE ÁUDIO E CHART
-// ==========================================
-const fileInput = document.getElementById('file-input');
-fileInput.addEventListener('click', function() { this.value = null; });
-fileInput.addEventListener('change', e => { if (e.target.files[0]) processAudioFile(e.target.files[0]); });
-
-function setStatus(msg, isErr=false) {
-  const el = document.getElementById('load-status');
-  el.textContent = msg; el.style.color = isErr ? '#fc5c7d' : '#5cfc9a';
-}
-function setProgress(pct) {
-  document.getElementById('progress-bar').style.display = 'block';
-  document.getElementById('progress-fill').style.width = pct + '%';
-  if (pct >= 100) setTimeout(() => document.getElementById('progress-bar').style.display='none', 600);
-}
-
-async function processAudioFile(file) {
-  currentAudioFile = file;
-  const fileName = file.name.replace(/\.[^.]+$/, '');
-  saveToHistory(fileName);
-
-  setStatus('A descodificar...'); setProgress(20);
-  try {
-    if(audioCtx.state === 'closed') audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = await audioCtx.decodeAudioData(arrayBuffer);
-    
-    setStatus('A criar mapa rítmico...'); setProgress(50);
-    currentChartData = await generateChartSpectralFlux(buffer, p => setProgress(50 + p * 50));
-    
-    setProgress(100); setStatus('Pronto!');
-    setTimeout(() => startCountdown(fileName), 600);
-  } catch(err) {
-    setStatus('Erro a ler ficheiro.', true); setProgress(0);
-  }
-}
-
-async function generateChartSpectralFlux(buffer, onProgress) {
-  return new Promise(resolve => {
-    const sr = buffer.sampleRate;
-    let mono = buffer.numberOfChannels === 1 ? buffer.getChannelData(0) : new Float32Array(buffer.getChannelData(0).length);
-    if(buffer.numberOfChannels > 1) {
-      const L = buffer.getChannelData(0), R = buffer.getChannelData(1);
-      for(let i=0; i<L.length; i++) mono[i] = (L[i]+R[i])*0.5;
-    }
-    const FFT = 2048, HOP = 512, HALF = FFT/2;
-    const hann = new Float32Array(FFT);
-    for(let i=0;i<FFT;i++) hann[i] = 0.5*(1-Math.cos(2*Math.PI*i/(FFT-1)));
-
-    function hz(val) { return Math.round(val / (sr / FFT)); }
-    const BANDS = [{lo:hz(20),hi:hz(250),c:0}, {lo:hz(250),hi:hz(800),c:1}, {lo:hz(800),hi:hz(3500),c:2}, {lo:hz(3500),hi:Math.min(hz(20000),HALF-1),c:3}];
-    const frames = Math.floor((mono.length - FFT)/HOP) + 1;
-    const flux = [new Float32Array(frames), new Float32Array(frames), new Float32Array(frames), new Float32Array(frames)];
-    
-    function comp(sig) {
-      const re = new Float32Array(sig), im = new Float32Array(FFT); let j = 0;
-      for(let i=1; i<FFT; i++) { let bit=FFT>>1; for(;j&bit;bit>>=1) j^=bit; j^=bit; if(i<j){[re[i],re[j]]=[re[j],re[i]]; [im[i],im[j]]=[im[j],im[i]];} }
-      for(let len=2; len<=FFT; len<<=1) {
-        const h=len>>1, ang=-2*Math.PI/len, wr=Math.cos(ang), wi=Math.sin(ang);
-        for(let i=0; i<FFT; i+=len) {
-          let cr=1, ci=0;
-          for(let k=0; k<h; k++) {
-            const ur=re[i+k], ui=im[i+k], vr=re[i+k+h]*cr - im[i+k+h]*ci, vi=re[i+k+h]*ci + im[i+k+h]*cr;
-            re[i+k]=ur+vr; im[i+k]=ui+vi; re[i+k+h]=ur-vr; im[i+k+h]=ui-vi;
-            const nr=cr*wr-ci*wi; ci=cr*wi+ci*wr; cr=nr;
-          }
-        }
-      }
-      const mag=new Float32Array(HALF); for(let i=0;i<HALF;i++) mag[i]=Math.sqrt(re[i]*re[i]+im[i]*im[i]); return mag;
-    }
-
-    const win = new Float32Array(FFT); let pMag = [new Float32Array(HALF),new Float32Array(HALF),new Float32Array(HALF),new Float32Array(HALF)];
-    let fIdx = 0;
-
-    function chunk() {
-      const end = Math.min(fIdx + 250, frames);
-      for(let f=fIdx; f<end; f++) {
-        const st = f*HOP; for(let i=0; i<FFT; i++) win[i] = (st+i<mono.length ? mono[st+i] : 0)*hann[i];
-        const mag = comp(win);
-        for(let b=0; b<4; b++) {
-          let sf=0; for(let k=BANDS[b].lo; k<=BANDS[b].hi; k++) { const d=mag[k]-pMag[b][k]; if(d>0) sf+=d; pMag[b][k]=mag[k]; }
-          flux[b][f]=sf;
-        }
-      }
-      fIdx = end; if(onProgress) onProgress(fIdx/frames);
-      if(fIdx<frames) setTimeout(chunk, 0); else resolve(build(flux, frames, HOP, sr));
-    }
-    chunk();
-  });
-}
-
-function build(flux, frames, HOP, sr) {
-  const onsets = []; 
-  for (let b=0; b<4; b++) {
-    const f=flux[b], avg=new Float32Array(frames);
-    for (let i=0; i<frames; i++) {
-      let s=0, c=0; for (let k=Math.max(0,i-40); k<=Math.min(frames-1,i+40); k++) { s+=f[k]; c++; } avg[i]=s/c;
-    }
-    let lp = -9999;
-    for (let i=1; i<frames-1; i++) {
-      if (f[i]>f[i-1] && f[i]>f[i+1] && f[i]>avg[i]*1.6 && (i-lp)>(0.12*sr/HOP)) { onsets.push({ frame:i, col:b }); lp=i; }
-    }
-  }
-  onsets.sort((a,b)=>a.frame-b.frame);
-  const chart=[]; let last=-9999;
-  for(let i=0; i<onsets.length; i++) {
-    if(onsets[i].frame-last < (0.07*sr/HOP)) continue;
-    chart.push({ time:onsets[i].frame*HOP/sr, col:onsets[i].col }); last=onsets[i].frame;
-  }
-  return chart;
-}
-
-// ==========================================
-// GAMEPLAY ENGINE
-// ==========================================
-let game = null, animFrame = null;
-
-function retryGame() {
-  if(currentAudioFile && currentChartData.length > 0) {
-    document.getElementById('pause-overlay').classList.remove('visible');
-    startCountdown(currentAudioFile.name.replace(/\.[^.]+$/, ''));
-  } else showScreen('load');
-}
-
-function startCountdown(fileName) {
-  showScreen('countdown'); document.getElementById('countdown-song').textContent = fileName;
-  const el = document.getElementById('countdown-num'); el.textContent = '3'; let n = 3;
-  const tick = () => { n--; if(n===0) { el.textContent='GO!'; setTimeout(startGame, 700); return; } el.textContent=n; el.style.animation='none'; void el.offsetWidth; el.style.animation='countdown-pop 1s ease-out'; setTimeout(tick, 1000); };
-  el.style.animation='countdown-pop 1s ease-out'; setTimeout(tick, 1000);
-}
-
-function startGame() {
-  showScreen('game');
-  for (let i=0; i<4; i++) document.getElementById('lane-'+i).querySelectorAll('.note,.hit-feedback').forEach(e=>e.remove());
-
-  const url = URL.createObjectURL(currentAudioFile);
-  const audioEl = new Audio(url); audioEl.crossOrigin = 'anonymous';
-
-  game = {
-    chart: JSON.parse(JSON.stringify(currentChartData)).map(n => ({...n, hit: false, missed: false, el: null})),
-    audio: audioEl, start: null, score: 0, combo: 0, maxCombo: 0, hp: 100,
-    p: 0, g: 0, m: 0, paused: false, pTime: 0, run: true
-  };
-
-  updHUD();
-  audioEl.play().then(() => { game.start = performance.now()/1000 - 0.05; loop(); });
-  audioEl.addEventListener('ended', () => { if(game && game.run) endGame(); });
-}
-
-function loop() {
-  if (!game || !game.run) return;
-  if (game.paused) { animFrame = requestAnimationFrame(loop); return; }
-
-  const now = performance.now()/1000, time = now - game.start;
-  const speed = settings.noteSpeed, hlPct = settings.hitLinePos / 100;
-  const spawnT = speed * hlPct + 0.15;
-
-  for (const n of game.chart) {
-    if (n.hit || n.missed || n.el) continue;
-    if (time >= n.time - spawnT) {
-      const lane = document.getElementById('lane-'+n.col);
-      if(lane) { const el = document.createElement('div'); el.className = 'note'; lane.appendChild(el); n.el = el; }
-    }
-  }
-
-  for (const n of game.chart) {
-    if (!n.el || n.hit) continue;
-    const elap = time - n.time;
-    const topPct = (hlPct + elap/speed) * 100;
-    n.el.style.top = topPct + '%';
-
-    if (!n.missed && elap > 0.15) {
-      n.missed = true; n.el.classList.add('miss');
-      game.combo = 0; game.m++; game.hp -= 8;
-      showFB(n.col, 'ERRO', 'miss'); updHUD();
-      setTimeout(() => { if(n.el){n.el.remove(); n.el=null;} }, 200);
-    }
-    if (topPct > 110) { if(n.el){n.el.remove(); n.el=null;} }
-  }
-
-  if (game.hp <= 0) { game.hp = 0; updHUD(); endGame(); return; }
-  animFrame = requestAnimationFrame(loop);
-}
-
-document.addEventListener('keydown', e => {
-  if (listeningIndex >= 0) {
-    settings.keys[listeningIndex] = e.key.toLowerCase();
-    const btn = document.getElementById('key-btn-'+listeningIndex);
-    if(btn) { btn.textContent = e.key.toUpperCase(); btn.classList.remove('listening'); }
-    listeningIndex = -1; e.preventDefault(); return;
-  }
-  if (!game || !game.run || game.paused) { if(e.key==='Escape' && document.getElementById('pause-overlay').classList.contains('visible')) resumeGame(); return; }
-  if (e.key === 'Escape') { pauseGame(); return; }
-  if (e.repeat) return;
-
-  const col = settings.keys.indexOf(e.key.toLowerCase()); if (col === -1) return;
-  const lane = document.getElementById('lane-'+col); const rec = lane.querySelector('.receptor');
-  rec.classList.add('active'); setTimeout(() => rec.classList.remove('active'), 150);
-  hit(col);
-});
-
-document.addEventListener('keyup', e => {
-  const col = settings.keys.indexOf(e.key.toLowerCase()); if(col===-1) return;
-  const lane = document.getElementById('lane-'+col); if(lane) lane.querySelector('.receptor')?.classList.remove('active');
-});
-
-function hit(col) {
-  if(!game) return; const time = performance.now()/1000 - game.start;
-  let b = null, bDiff = Infinity;
-  for (const n of game.chart) {
-    if(n.col!==col || n.hit || n.missed) continue;
-    const d = Math.abs(time - n.time); if(d < bDiff) { bDiff = d; b = n; }
-  }
-  if(!b || bDiff > 0.15) return;
-
-  if (bDiff <= 0.05) {
-    b.hit = true; game.combo++; game.p++; game.hp += 2; game.score += 300*(1+Math.floor(game.combo/10)); showFB(col, 'PERFEITO', 'perfect');
-  } else if (bDiff <= 0.1) {
-    b.hit = true; game.combo++; game.g++; game.hp += 0.5; game.score += 100*(1+Math.floor(game.combo/10)); showFB(col, 'BOM', 'good');
-  } else {
-    b.hit = true; game.combo=0; game.m++; game.hp -= 8; showFB(col, 'ERRO', 'miss');
-  }
-
-  game.maxCombo = Math.max(game.maxCombo, game.combo); game.hp = Math.min(100, game.hp);
-  if(b.hit && b.el) { b.el.style.opacity='0'; setTimeout(()=>b.el?.remove(), 120); }
-  updHUD();
-}
-
-function showFB(col, txt, type) {
-  const l = document.getElementById('lane-'+col); if(!l) return;
-  const e = document.createElement('div'); e.className = `hit-feedback ${type}`; e.textContent = txt;
-  if(type==='perfect') e.style.color='#fff'; if(type==='good') e.style.color='var(--col3)'; if(type==='miss') e.style.color='var(--text-dim)';
-  l.appendChild(e); setTimeout(()=>e.remove(), 400);
-}
-
-function updHUD() {
-  document.getElementById('score-val').textContent = String(game.score).padStart(6,'0');
-  const c = document.getElementById('combo-val'); c.textContent = game.combo+'x';
-  document.getElementById('perfect-val').textContent = game.p;
-  document.getElementById('good-val').textContent = game.g;
-  document.getElementById('miss-val').textContent = game.m;
-  const tot = game.p+game.g+game.m;
-  document.getElementById('acc-val').textContent = tot===0 ? '100%' : Math.round((game.p*100 + game.g*50)/(tot*100)*100)+'%';
-  document.getElementById('hp-fill').style.width = game.hp+'%';
-}
-
-function pauseGame() { if(!game||!game.run)return; game.paused=true; game.pTime=performance.now(); game.audio.pause(); document.getElementById('pause-overlay').classList.add('visible'); }
-function resumeGame() { if(!game)return; game.start += (performance.now()-game.pTime)/1000; game.paused=false; game.audio.play(); document.getElementById('pause-overlay').classList.remove('visible'); }
-function quitGame() { document.getElementById('pause-overlay').classList.remove('visible'); endGame(); }
-
-function endGame() {
-  if(!game) return; game.run=false; cancelAnimationFrame(animFrame); game.audio.pause();
-  const tot = game.p+game.g+game.m; const acc = tot===0 ? 100 : Math.round((game.p*100 + game.g*50)/(tot*100)*100);
-  let gr = 'D', cl = '#8b8b9e';
-  if(game.hp<=0) { gr='F'; cl='#fc5c7d'; } else if(acc>=95 && game.m===0) { gr='S'; cl='#ffd700'; } else if(acc>=90) { gr='A'; cl='#5cfc9a'; } else if(acc>=80) { gr='B'; cl='#7c5cfc'; } else if(acc>=60) { gr='C'; cl='#fcb75c'; }
-  document.getElementById('results-grade').textContent = gr; document.getElementById('results-grade').style.color = cl;
-  document.getElementById('r-score').textContent = String(game.score).padStart(6,'0');
-  document.getElementById('r-acc').textContent = acc+'%'; document.getElementById('r-combo').textContent = game.maxCombo;
-  game = null; showScreen('results');
-}
-
-loadSettings();
-
-// Iniciar Partículas
-initParticles(); animParticles();
-</script>
+<script src="script.js"></script>
 </body>
 </html>
